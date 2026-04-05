@@ -27,45 +27,27 @@ jobs:
           cd ios
           pod install
 
-      # Проверяем, что создалось (для отладки)
-      - name: List iOS directory
-        run: ls -la ios/
-
       - name: Build App (Unsigned)
         run: |
           cd ios
-          # Используем *.xcworkspace чтобы поймать любое имя
-          WORKSPACE=$(ls *.xcworkspace 2>/dev/null | head -n1)
-          if [ -z "$WORKSPACE" ]; then
-            echo "No .xcworkspace found, trying .xcodeproj"
-            xcodebuild -project kunigram.xcodeproj \
-              -scheme kunigram \
-              -configuration Release \
-              -sdk iphoneos \
-              -derivedDataPath build \
-              CODE_SIGNING_ALLOWED=NO \
-              CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGN_IDENTITY=""
-          else
-            echo "Using workspace: $WORKSPACE"
-            xcodebuild -workspace "$WORKSPACE" \
-              -scheme kunigram \
-              -configuration Release \
-              -sdk iphoneos \
-              -derivedDataPath build \
-              CODE_SIGNING_ALLOWED=NO \
-              CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGN_IDENTITY=""
-          fi
+          # Используем правильные имена: sqrtgram.xcworkspace и схему sqrtgram
+          xcodebuild -workspace sqrtgram.xcworkspace \
+            -scheme sqrtgram \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
 
       - name: Package to .ipa
         run: |
           mkdir -p Payload
-          mv ios/build/Build/Products/Release-iphoneos/kunigram.app Payload/
-          zip -r kunigram.ipa Payload
+          mv ios/build/Build/Products/Release-iphoneos/sqrtgram.app Payload/
+          zip -r sqrtgram.ipa Payload
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kunigram-ipa
-          path: kunigram.ipa
+          name: sqrtgram-ipa
+          path: sqrtgram.ipa
