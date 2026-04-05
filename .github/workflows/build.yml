@@ -14,10 +14,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'  # Обновил до 20, Expo лучше работает
 
       - name: Install dependencies
         run: npm install
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}  # Опционально, если нужно
 
       - name: Expo Prebuild (Generate iOS folder)
         run: npx expo prebuild --platform ios --clean
@@ -27,10 +33,13 @@ jobs:
           cd ios
           pod install
 
+      # Ключевой фикс: устанавливаем переменные окружения для React Native
       - name: Build App (Unsigned)
+        env:
+          RCT_NO_LAUNCH_PACKAGER: "1"  # Отключаем попытку запуска Metro
+          NODE_BINARY: $(which node)
         run: |
           cd ios
-          # Используем правильные имена: sqrtgram.xcworkspace и схему sqrtgram
           xcodebuild -workspace sqrtgram.xcworkspace \
             -scheme sqrtgram \
             -configuration Release \
@@ -38,12 +47,14 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" \
+            COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Package to .ipa
         run: |
           mkdir -p Payload
-          mv ios/build/Build/Products/Release-iphoneos/sqrtgram.app Payload/
+          APP_PATH=$(find ios/build -name "*.app" -type d | head -n1)
+          cp -r "$APP_PATH" Payload/
           zip -r sqrtgram.ipa Payload
 
       - name: Upload Artifact
